@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+
+  :root{
+    --bg: #F4F6F4;
+    --surface: #FFFFFF;
+    --border: #E2E8E4;
+    --text: #2B362F;
+    --text-soft: #5B6962;
+    --habit: #2F6E5C;
+    --habit-light: #DCEEE7;
+    --reward: #7D4F82;
+    --reward-light: #EFE3F0;
+    --jar-1: #BFE3D2;
+    --jar-2: #2F6E5C;
+    --radius: 16px;
+    --motion: 0.5s;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    :root{ --motion: 0s; }
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Atkinson Hyperlegible', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page{
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 18px 60px;
+  }
+
+  header{
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  header h1{
+    font-size: 1.5rem;
+    margin: 0 0 2px;
+  }
+
+  header p{
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .jar-card{
+    text-align: center;
+  }
+
+  .jar-wrap{
+    width: 130px;
+    height: 160px;
+    margin: 4px auto 12px;
+    position: relative;
+  }
+
+  .jar-body{
+    position: absolute;
+    inset: 0;
+    border: 4px solid var(--habit);
+    border-radius: 14px 14px 26px 26px;
+    background: var(--surface);
+    overflow: hidden;
+    clip-path: polygon(22% 0%, 78% 0%, 100% 12%, 100% 100%, 0% 100%, 0% 12%);
+  }
+
+  .jar-fill{
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 0%;
+    background: linear-gradient(180deg, var(--jar-1), var(--jar-2));
+    transition: height var(--motion) ease;
+  }
+
+  .points-total{
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 4px 0 2px;
+  }
+
+  .points-total span{
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--text-soft);
+  }
+
+  .jar-sub{
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    min-height: 1.3em;
+  }
+
+  h2.section-title{
+    font-size: 1.1rem;
+    margin: 0 0 14px;
+  }
+
+  .row{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row:last-of-type{
+    border-bottom: none;
+  }
+
+  .habit-toggle{
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: background var(--motion) ease, border-color var(--motion) ease, transform 0.15s ease;
+  }
+
+  .habit-toggle[aria-pressed="true"]{
+    background: var(--habit-light);
+    border-color: var(--habit);
+  }
+
+  .habit-toggle:active{
+    transform: scale(0.96);
+  }
+
+  .row-name{
+    flex: 1 1 auto;
+    font-size: 1rem;
+  }
+
+  .badge{
+    flex: 0 0 auto;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .badge-habit{
+    background: var(--habit-light);
+    color: var(--habit);
+  }
+
+  .badge-reward{
+    background: var(--reward-light);
+    color: var(--reward);
+  }
+
+  .del-btn{
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .del-btn:hover{
+    background: var(--bg);
+  }
+
+  .reward-row{
+    flex-wrap: wrap;
+  }
+
+  .reward-name{
+    flex: 1 1 100%;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .reward-meta{
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .reward-status{
+    font-size: 0.85rem;
+    color: var(--text-soft);
+  }
+
+  .redeem-btn{
+    margin-left: auto;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .redeem-btn.active{
+    background: var(--reward);
+    color: white;
+  }
+
+  .redeem-btn.disabled{
+    background: var(--bg);
+    color: var(--text-soft);
+    cursor: not-allowed;
+  }
+
+  .empty-state{
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    padding: 8px 0;
+  }
+
+  .add-toggle{
+    margin-top: 8px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px dashed var(--border);
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .add-toggle:hover{
+    border-color: var(--habit);
+    color: var(--habit);
+  }
+
+  .add-form{
+    margin-top: 12px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .add-form.open{
+    display: flex;
+  }
+
+  .add-form input[type="text"], .add-form input[type="number"]{
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .add-form input:focus{
+    outline: none;
+    border-color: var(--habit);
+  }
+
+  .emoji-grid{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .emoji-pick{
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    border-radius: 9px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .emoji-pick[aria-pressed="true"]{
+    border-color: var(--habit);
+    background: var(--habit-light);
+  }
+
+  .form-actions{
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn{
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-primary.habit-theme{ background: var(--habit); color: white; }
+  .btn-primary.reward-theme{ background: var(--reward); color: white; }
+
+  .btn-secondary{
+    background: var(--bg);
+    color: var(--text-soft);
+  }
+
+  .redeemed-log{
+    margin-top: 4px;
+  }
+
+  .redeemed-log h3{
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    margin: 4px 0 6px;
+    font-weight: 700;
+  }
+
+  .redeemed-item{
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    padding: 4px 0;
+  }
+
+  *:focus-visible{
+    outline: 3px solid var(--habit);
+    outline-offset: 2px;
+  }
+
+  .setup-overlay{
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 100;
+  }
+
+  .setup-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    max-width: 380px;
+    width: 100%;
+  }
+
+  .setup-card h1{
+    font-size: 1.3rem;
+    margin: 0 0 8px;
+  }
+
+  .setup-card p{
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin: 0 0 18px;
+  }
+
+  .setup-card label{
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .setup-card input[type="text"]{
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+    margin-bottom: 16px;
+  }
+
+  .setup-card input:focus{
+    outline: none;
+    border-color: var(--habit);
+  }
+
+  .setup-card .btn{
+    width: 100%;
+  }
+
+  .setup-error{
+    color: var(--reward);
+    font-size: 0.85rem;
+    margin: 10px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <h1>Let's set up your tracker</h1>
+    <p>This only takes a second. Your info stays on this device — nothing is sent anywhere.</p>
+    <label for="setupNameInput">What should we call you?</label>
+    <input type="text" id="setupNameInput" placeholder="Your name" maxlength="30">
+    <button class="btn btn-primary habit-theme" id="setupSubmit" type="button">Get started</button>
+    <p class="setup-error" id="setupError" style="display:none;">Please enter a name to continue.</p>
+  </div>
+</div>
+
+<div class="page" id="mainPage" style="display:none;">
+  <header>
+    <h1 id="greeting">Hi there</h1>
+    <p id="dateLine"></p>
+  </header>
+
+  <div class="card jar-card">
+    <div class="jar-wrap">
+      <div class="jar-body">
+        <div class="jar-fill" id="jarFill"></div>
+      </div>
+    </div>
+    <div class="points-total"><span id="pointsTotal">0</span> <span>points saved up</span></div>
+    <div class="jar-sub" id="jarSub"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">Today's habits</h2>
+    <div id="habitList"></div>
+    <button class="add-toggle" id="showHabitForm" type="button">+ Add a habit</button>
+    <div class="add-form" id="habitForm">
+      <input type="text" id="habitNameInput" placeholder="Habit name, like Brush teeth">
+      <div class="emoji-grid" id="emojiGrid"></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="cancelHabitForm" type="button">Cancel</button>
+        <button class="btn btn-primary habit-theme" id="submitHabitForm" type="button">Add habit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">Rewards I'm working toward</h2>
+    <div id="rewardList"></div>
+    <div class="empty-state" id="rewardEmpty" style="display:none;">
+      No rewards yet. Add something you'd like to earn — a snack, screen time, a fun activity, anything you choose.
+    </div>
+    <button class="add-toggle" id="showRewardForm" type="button">+ Add a reward</button>
+    <div class="add-form" id="rewardForm">
+      <input type="text" id="rewardNameInput" placeholder="Reward name, like 30 minutes of gaming">
+      <input type="number" id="rewardCostInput" placeholder="Points needed, like 50" min="1">
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="cancelRewardForm" type="button">Cancel</button>
+        <button class="btn btn-primary reward-theme" id="submitRewardForm" type="button">Add reward</button>
+      </div>
+    </div>
+    <div class="redeemed-log" id="redeemedLog"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'tracker-data:v1';
+  const PROFILE_KEY = 'tracker-profile:v1';
+  const EMOJI_OPTIONS = ['✅','🪥','🚶','💧','🧘','📚','🎨','🛏️','🍎','🧩','🎵','☀️'];
+
+  let state = null;
+  let selectedEmoji = EMOJI_OPTIONS[0];
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function uid(prefix){ return prefix + Date.now() + Math.floor(Math.random()*1000); }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  function defaultState(){
+    return {
+      habits: [
+        { id: uid('h'), name: 'Brush teeth', emoji: '🪥', points: 10 },
+        { id: uid('h'), name: 'Take a walk', emoji: '🚶', points: 10 },
+        { id: uid('h'), name: 'Drink water', emoji: '💧', points: 10 },
+        { id: uid('h'), name: 'Take a calm break', emoji: '🧘', points: 10 }
+      ],
+      rewards: [],
+      totalPoints: 0,
+      lastDate: todayStr(),
+      completedToday: [],
+      redeemedLog: []
+    };
+  }
+
+  async function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ return JSON.parse(raw); }
+    }catch(e){ /* no existing data yet */ }
+    return null;
+  }
+
+  async function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ console.error('Could not save', e); }
+  }
+
+  function loadProfile(){
+    try{
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if(raw){ return JSON.parse(raw); }
+    }catch(e){ /* no profile yet */ }
+    return null;
+  }
+
+  function saveProfile(profile){
+    try{
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }catch(e){ console.error('Could not save profile', e); }
+  }
+
+  function checkNewDay(){
+    const today = todayStr();
+    if(state.lastDate !== today){
+      state.completedToday = [];
+      state.lastDate = today;
+    }
+  }
+
+  function greetingText(name){
+    const h = new Date().getHours();
+    let base;
+    if(h < 12) base = 'Good morning';
+    else if(h < 18) base = 'Good afternoon';
+    else base = 'Good evening';
+    return name ? base + ', ' + name : base;
+  }
+
+  function dateLineText(){
+    return new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  function computeJarTarget(){
+    const reachable = state.rewards
+      .filter(r => r.cost > state.totalPoints)
+      .sort((a,b) => a.cost - b.cost)[0];
+    if(reachable) return { target: reachable.cost, name: reachable.name };
+    const target = Math.max(100, Math.ceil((state.totalPoints+1)/100)*100);
+    return { target, name: null };
+  }
+
+  function render(){
+    document.getElementById('greeting').textContent = greetingText(state.profileName) + '!';
+    document.getElementById('dateLine').textContent = dateLineText();
+    document.getElementById('pointsTotal').textContent = state.totalPoints;
+
+    const { target, name } = computeJarTarget();
+    const pct = Math.min(100, Math.round((state.totalPoints/target)*100));
+    document.getElementById('jarFill').style.height = pct + '%';
+
+    const remaining = Math.max(0, target - state.totalPoints);
+    const sub = document.getElementById('jarSub');
+    if(name){
+      sub.textContent = remaining + (remaining === 1 ? ' point' : ' points') + ' more to "' + name + '"';
+    }else{
+      sub.textContent = remaining + (remaining === 1 ? ' point' : ' points') + ' to your next milestone';
+    }
+
+    renderHabits();
+    renderRewards();
+  }
+
+  function renderHabits(){
+    const list = document.getElementById('habitList');
+    list.innerHTML = '';
+    if(state.habits.length === 0){
+      list.innerHTML = '<div class="empty-state">No habits yet. Add one to get started.</div>';
+      return;
+    }
+    state.habits.forEach(h => {
+      const done = state.completedToday.includes(h.id);
+      const row = document.createElement('div');
+      row.className = 'row';
+      const safeName = escapeHtml(h.name);
+      const safeEmoji = escapeHtml(h.emoji);
+      row.innerHTML =
+        '<button class="habit-toggle" aria-pressed="' + done + '" aria-label="Mark ' + safeName + ' as ' + (done ? 'not done' : 'done') + '">' + (done ? '✓' : safeEmoji) + '</button>' +
+        '<div class="row-name">' + safeName + '</div>' +
+        '<div class="badge badge-habit">+' + h.points + '</div>' +
+        '<button class="del-btn" aria-label="Delete ' + safeName + '">×</button>';
+      row.querySelector('.habit-toggle').addEventListener('click', () => toggleHabit(h.id));
+      row.querySelector('.del-btn').addEventListener('click', () => deleteHabit(h.id));
+      list.appendChild(row);
+    });
+  }
+
+  function renderRewards(){
+    const list = document.getElementById('rewardList');
+    list.innerHTML = '';
+    document.getElementById('rewardEmpty').style.display = state.rewards.length === 0 ? 'block' : 'none';
+
+    state.rewards.forEach(r => {
+      const affordable = state.totalPoints >= r.cost;
+      const row = document.createElement('div');
+      row.className = 'row reward-row';
+      const safeRewardName = escapeHtml(r.name);
+      row.innerHTML =
+        '<div class="reward-name">' + safeRewardName + '</div>' +
+        '<div class="reward-meta">' +
+          '<div class="badge badge-reward">' + r.cost + ' pts</div>' +
+          '<div class="reward-status">' + (affordable ? 'Ready to redeem' : (r.cost - state.totalPoints) + ' more needed') + '</div>' +
+          '<button class="redeem-btn ' + (affordable ? 'active' : 'disabled') + '" ' + (affordable ? '' : 'disabled') + '>Redeem</button>' +
+        '</div>' +
+        '<button class="del-btn" aria-label="Delete ' + safeRewardName + '" style="margin-left:auto;">×</button>';
+      row.querySelector('.redeem-btn').addEventListener('click', () => redeemReward(r.id));
+      row.querySelector('.del-btn').addEventListener('click', () => deleteReward(r.id));
+      list.appendChild(row);
+    });
+
+    const log = document.getElementById('redeemedLog');
+    if(state.redeemedLog.length === 0){
+      log.innerHTML = '';
+    }else{
+      let html = '<h3>Recently redeemed</h3>';
+      state.redeemedLog.slice(0,5).forEach(item => {
+        html += '<div class="redeemed-item">' + escapeHtml(item.name) + ' — ' + escapeHtml(item.date) + '</div>';
+      });
+      log.innerHTML = html;
+    }
+  }
+
+  function toggleHabit(id){
+    const habit = state.habits.find(h => h.id === id);
+    if(!habit) return;
+    if(state.completedToday.includes(id)){
+      state.completedToday = state.completedToday.filter(x => x !== id);
+      state.totalPoints = Math.max(0, state.totalPoints - habit.points);
+    }else{
+      state.completedToday.push(id);
+      state.totalPoints += habit.points;
+    }
+    saveState();
+    render();
+  }
+
+  function deleteHabit(id){
+    state.habits = state.habits.filter(h => h.id !== id);
+    state.completedToday = state.completedToday.filter(x => x !== id);
+    saveState();
+    render();
+  }
+
+  function redeemReward(id){
+    const reward = state.rewards.find(r => r.id === id);
+    if(!reward || state.totalPoints < reward.cost) return;
+    state.totalPoints -= reward.cost;
+    state.redeemedLog.unshift({ name: reward.name, cost: reward.cost, date: dateLineText() });
+    state.redeemedLog = state.redeemedLog.slice(0,10);
+    saveState();
+    render();
+  }
+
+  function deleteReward(id){
+    state.rewards = state.rewards.filter(r => r.id !== id);
+    saveState();
+    render();
+  }
+
+  function buildEmojiGrid(){
+    const grid = document.getElementById('emojiGrid');
+    grid.innerHTML = '';
+    EMOJI_OPTIONS.forEach(e => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-pick';
+      btn.type = 'button';
+      btn.textContent = e;
+      btn.setAttribute('aria-pressed', e === selectedEmoji ? 'true' : 'false');
+      btn.addEventListener('click', () => {
+        selectedEmoji = e;
+        Array.from(grid.children).forEach(c => c.setAttribute('aria-pressed', c === btn ? 'true' : 'false'));
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function wireForms(){
+    const habitForm = document.getElementById('habitForm');
+    const rewardForm = document.getElementById('rewardForm');
+
+    document.getElementById('showHabitForm').addEventListener('click', () => {
+      habitForm.classList.add('open');
+      document.getElementById('habitNameInput').focus();
+    });
+    document.getElementById('cancelHabitForm').addEventListener('click', () => {
+      habitForm.classList.remove('open');
+      document.getElementById('habitNameInput').value = '';
+    });
+    document.getElementById('submitHabitForm').addEventListener('click', () => {
+      const input = document.getElementById('habitNameInput');
+      const name = input.value.trim();
+      if(!name) return;
+      state.habits.push({ id: uid('h'), name, emoji: selectedEmoji, points: 10 });
+      saveState();
+      render();
+      input.value = '';
+      selectedEmoji = EMOJI_OPTIONS[0];
+      buildEmojiGrid();
+      habitForm.classList.remove('open');
+    });
+
+    document.getElementById('showRewardForm').addEventListener('click', () => {
+      rewardForm.classList.add('open');
+      document.getElementById('rewardNameInput').focus();
+    });
+    document.getElementById('cancelRewardForm').addEventListener('click', () => {
+      rewardForm.classList.remove('open');
+      document.getElementById('rewardNameInput').value = '';
+      document.getElementById('rewardCostInput').value = '';
+    });
+    document.getElementById('submitRewardForm').addEventListener('click', () => {
+      const nameInput = document.getElementById('rewardNameInput');
+      const costInput = document.getElementById('rewardCostInput');
+      const name = nameInput.value.trim();
+      const cost = parseInt(costInput.value, 10);
+      if(!name || !cost || cost < 1) return;
+      state.rewards.push({ id: uid('r'), name, cost });
+      saveState();
+      render();
+      nameInput.value = '';
+      costInput.value = '';
+      rewardForm.classList.remove('open');
+    });
+  }
+
+  function wireSetupScreen(onDone){
+    const overlay = document.getElementById('setupOverlay');
+    const input = document.getElementById('setupNameInput');
+    const error = document.getElementById('setupError');
+
+    function submit(){
+      const name = input.value.trim();
+      if(!name){
+        error.style.display = 'block';
+        return;
+      }
+      saveProfile({ name, createdAt: new Date().toISOString() });
+      overlay.style.display = 'none';
+      document.getElementById('mainPage').style.display = '';
+      onDone(name);
+    }
+
+    document.getElementById('setupSubmit').addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') submit();
+    });
+    input.focus();
+  }
+
+  async function init(){
+    const loaded = await loadState();
+    state = loaded || defaultState();
+    checkNewDay();
+    buildEmojiGrid();
+    wireForms();
+
+    const profile = loadProfile();
+    if(profile && profile.name){
+      state.profileName = profile.name;
+      document.getElementById('setupOverlay').style.display = 'none';
+      document.getElementById('mainPage').style.display = '';
+      render();
+      saveState();
+    }else{
+      wireSetupScreen((name) => {
+        state.profileName = name;
+        render();
+        saveState();
+      });
+    }
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
