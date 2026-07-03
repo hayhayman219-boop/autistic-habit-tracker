@@ -1,0 +1,53 @@
+# Daily security check for the habit tracker repo
+# Runs every day at 2:00 AM EST (7:00 AM UTC).
+# Note: during daylight saving time this runs at 3:00 AM EDT,
+# because GitHub cron schedules are fixed to UTC.
+
+name: Daily Security Check
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  # Lets you also trigger the check manually from the Actions tab
+  workflow_dispatch:
+  # Also runs whenever you push new code, so problems are caught right away
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql-scan:
+    name: CodeQL security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          # security-extended catches more issue types, including
+          # DOM-based XSS patterns relevant to a single-file HTML app
+          queries: security-extended
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+
+  secret-scan:
+    name: Scan for leaked secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
